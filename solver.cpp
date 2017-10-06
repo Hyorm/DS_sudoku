@@ -12,7 +12,8 @@
 
 using namespace std;
 
-#define INPUT_FILE "test2_input"
+#define INPUT_FILE "input.txt"
+#define OUPUT_FILE "output.txt"
 #define DIMACS_FILE "formula.txt"
 #define SOLUTION_FILE "SAT_solution.txt"
 
@@ -91,8 +92,8 @@ int row_hint_bag[NR] = {0, };  // hints bag for each row
 int col_hint_bag[NC] = {0, };  // hints bag for each column
 int sub_hint_bag[NSR][NSC] = {{0, }, {0, }, {0, }};   // hints bag for each sub-grids
 
-void parse_prob(void);
-void print_map(void);
+void parse_prob(char *);
+void print_map(FILE *);
 void encoder_test(void);
 void decoder_test(void);
 void get_hints(void);
@@ -106,13 +107,18 @@ void set_solution_map(vector<int> *);
 int sudoku_checker(void);
 
 int main(int argc, char *argv[]) {
+  FILE *fp;
   ClauseBag *cb = new ClauseBag;
   vector<int> solutions;
  
-  parse_prob();
+  if(argc > 1) {
+    parse_prob((char *)argv[1]);
+  } else {
+    parse_prob(INPUT_FILE);
+  }
 
-  printf("Given Sudoku Map\n");
-  print_map();
+  //printf("Given Sudoku Map\n");
+  //print_map(NULL);
 
   get_hints();
   get_clause_bag(cb);
@@ -121,30 +127,33 @@ int main(int argc, char *argv[]) {
 
   SAT_exec();
 
+  fp = fopen(OUPUT_FILE, "w");
   if(read_solution(&solutions) < 0) {
+    fprintf(fp, "no solution\n");
     printf("no solution\n");
 
     return 0;
   }
   set_solution_map(&solutions);
 
-  printf("Sudoku Map Solution\n");
-  print_map();
+  // printf("Sudoku Map Solution\n");
+  print_map(fp);
 
+  fclose(fp);
   if(sudoku_checker()) {
-    printf("Sudoku clear!\n");
+    // printf("Sudoku clear!\n");
   } else {
-    printf("Wrong Solution!\n");
+    // printf("Wrong Solution!\n");
   }
 
   return 0;
 }
 
-void parse_prob(void) {
+void parse_prob(char *input) {
   int i, j;
   FILE *fp;
 
-  if((fp = fopen(INPUT_FILE, "r")) != NULL) {
+  if((fp = fopen(input, "r")) != NULL) {
     FZTN(i, NR) {
       char row[NBUF];
 
@@ -160,11 +169,15 @@ void parse_prob(void) {
   fclose(fp);
 }
 
-void print_map(void) {
+void print_map(FILE *fp) {
   int i, j;
 
   FZTN(i, NR) {
-    FZTN(j, NC) printf("%c ", map[i][j]);
+    FZTN(j, NC) {
+      if(fp) fprintf(fp, "%c ", map[i][j]);
+      printf("%c ", map[i][j]);
+    }
+    if(fp) fprintf(fp, "\n");
     putchar('\n');
   }
 }
@@ -248,7 +261,7 @@ void get_clause_bag(ClauseBag* cb) {
         FZTN(l, NC) {
           if(map[i][j] == '*' && map[k][l] == '*' && (i != k && j != l)) {
             FMTN(n, 1, NV + 1) {
-              printf("i = %d j = %d k = %d l = %d n = %d p1 = %d p2 = %d\n", i, j, k, l, n, RCNTOP(i, j, n), RCNTOP(k, l, n));
+              //printf("i = %d j = %d k = %d l = %d n = %d p1 = %d p2 = %d\n", i, j, k, l, n, RCNTOP(i, j, n), RCNTOP(k, l, n));
               cb->star_bag[i][j][k][l].push_back(-RCNTOP(i, j, n));
               cb->star_bag[i][j][k][l].push_back(RCNTOP(k, l, n));
             }
@@ -375,7 +388,7 @@ void SAT_exec(void) {
   pid_t pid = fork();
 
   if(pid == 0) {
-    execlp("minisat", "minisat", DIMACS_FILE, SOLUTION_FILE, NULL);
+    execlp("minisat", "minisat", "-verb=0", DIMACS_FILE, SOLUTION_FILE, NULL);
     exit(127);
   } else {
     waitpid(pid, 0, 0); /* wait for child to exit */
