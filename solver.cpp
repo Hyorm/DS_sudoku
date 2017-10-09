@@ -92,6 +92,8 @@ int row_hint_bag[NR] = {0, };  // hints bag for each row
 int col_hint_bag[NC] = {0, };  // hints bag for each column
 int sub_hint_bag[NSR][NSC] = {{0, }, {0, }, {0, }};   // hints bag for each sub-grids
 
+int read_mode = 0;
+
 void parse_prob(char *);
 void print_map(FILE *);
 void encoder_test(void);
@@ -164,7 +166,15 @@ void parse_prob(char *input) {
       char row[NBUF];
 
       fgets(row, NBUF, fp);  // read a line from the file
-      FZTN(j, NC) map[i][j] = row[j * 2];  // put each numbers(or *) into map array, each numbers are placed at even index ("%c ")
+      if(row[1] != ' ') read_mode = 1;
+
+      FZTN(j, NC) {
+        if(read_mode) {
+          map[i][j] = row[j];  // put each numbers(or *) into map array
+        } else {
+          map[i][j] = row[j * 2];  // put each numbers(or *) into map array
+        }
+      }
     }
   } else {
     printf("Input File Load Failure.\n");
@@ -180,8 +190,13 @@ void print_map(FILE *fp) {
 
   FZTN(i, NR) {
     FZTN(j, NC) {
-      if(fp) fprintf(fp, "%c ", map[i][j]);
-      printf("%c ", map[i][j]);
+      if(read_mode) {
+        if(fp) fprintf(fp, "%c", map[i][j]);
+        printf("%c", map[i][j]);
+      } else {
+        if(fp) fprintf(fp, "%c ", map[i][j]);
+        printf("%c ", map[i][j]);
+      }
     }
     if(fp) fprintf(fp, "\n");
     putchar('\n');
