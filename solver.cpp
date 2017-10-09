@@ -112,9 +112,12 @@ int main(int argc, char *argv[]) {
   vector<int> solutions;
  
   if(argc > 1) {
-    parse_prob((char *)argv[1]);
+    parse_prob(argv[1]);
   } else {
-    parse_prob(INPUT_FILE);
+    char* input = (char *)malloc(sizeof(char) * (strlen(INPUT_FILE) + 1));
+    
+    strcpy(input, INPUT_FILE);
+    parse_prob(input);
   }
 
   //printf("Given Sudoku Map\n");
@@ -140,6 +143,7 @@ int main(int argc, char *argv[]) {
   print_map(fp);
 
   fclose(fp);
+  
   if(sudoku_checker()) {
     // printf("Sudoku clear!\n");
   } else {
