@@ -118,6 +118,8 @@ int main(int argc, char *argv[]) {
     
     strcpy(input, INPUT_FILE);
     parse_prob(input);
+    
+    free(input);
   }
 
   //printf("Given Sudoku Map\n");
